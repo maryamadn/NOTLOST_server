@@ -11,7 +11,6 @@ app = Flask(__name__)
 app.register_blueprint(users, url_prefix='/users')
 app.register_blueprint(items, url_prefix='/items')
 app.register_blueprint(photos, url_prefix='/photos')
-
 CORS(app)
 
 # secret = 'mary'

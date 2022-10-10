@@ -1,12 +1,14 @@
 import os
 import psycopg2
 from flask import Blueprint, request
+from flask_cors import CORS
 import bcrypt
 import jwt
 
 from Functions.select_users import select_users
 
 users = Blueprint('users_blueprint', __name__)
+CORS(users)
 
 secret = os.environ.get("SECRET")
 url = os.environ.get("DATABASE_URI")  # gets variables from environment
@@ -17,19 +19,25 @@ connection = psycopg2.connect(url)
 def get_create_users():
     if request.method == 'POST':
         user = request.get_json()
+        #add is_admin value
+        user["is_admin"] = False
+        #hash password
         password = user["password"]
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(bytes, salt).decode('utf-8')
         user["password"] = hashed_password
+
+        #create list of user values
         values = list(user.values())
         with connection:
                 with connection.cursor() as cursor:
                     try:
                         cursor.execute("""INSERT INTO users (username, password, email, full_name, phone, is_admin)
                         VALUES (%s, %s, %s, %s, %s, %s)""", values)
-                    except:
-                        return {"error": "Validation failed."}, 400
+                    except Exception as error:
+                        print('ni', error)
+                        return {"error": f'{error}'}, 400
 
     with connection:
         with connection.cursor() as cursor:
@@ -106,5 +114,6 @@ def signin():
                     return {"error": "Validation failed."}, 401
                 else:
                     payload = select_users(cursor, username=username)[0]
+                    del payload["password"]
                     token = jwt.encode(payload, secret)
                     return {"msg": "Successful sign in.", "token": token}, 200

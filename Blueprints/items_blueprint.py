@@ -1,10 +1,12 @@
 import os
 import psycopg2
 from flask import Blueprint, request
+from flask_cors import CORS
 
 from Functions.select_items import select_items
 
 items = Blueprint('items_blueprint', __name__)
+CORS(items)
 
 url = os.environ.get("DATABASE_URI")  # gets variables from environment
 connection = psycopg2.connect(url)
