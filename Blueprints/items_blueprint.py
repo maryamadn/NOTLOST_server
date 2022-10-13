@@ -21,6 +21,7 @@ def get_create_items():
         del item["catSubcat"]
 
         values = list(item.values())
+        print(values)
         with connection:
                 with connection.cursor() as cursor:
                     try:
