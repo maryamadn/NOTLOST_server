@@ -1,32 +1,50 @@
 from datetime import datetime, timedelta
 
-def select_items(cursor, id='', query=''):
-    if id == '' and query == '':
+def select_items(cursor, id='', query='', user_id=''):
+    print(query)
+    if id == '' and len(query) == 0 and user_id == '':
         cursor.execute("SELECT * FROM items ORDER BY date_time DESC")
+    elif id != '':
+        cursor.execute(f"SELECT title, category, subcategory, colour, description, items.id, last_location, status, type, date_time, found_lost_by, retrieved_by,json_agg(json_build_object('photo', photos.photo, 'photo_id', photos.id)) AS photos FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE items.id = {id} GROUP BY items.id ORDER BY date_time DESC")
+    elif user_id != '':
+        cursor.execute(f"SELECT title, category, subcategory, date_time, type, items.id, type, json_agg(json_build_object('photo', photos.photo, 'photo_id', photos.id)) AS photos FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE found_lost_by = {user_id} GROUP BY items.id ORDER BY date_time DESC")
     else:
         query_dict = query.to_dict()
-        search = query_dict["search"]
-        sort_by = query_dict["sort_by"]
-        del query_dict["search"]
-        del query_dict["sort_by"]
-        
-        #filters = [[k,v] for (k,v) in query_dict.items()]
+
         filters = [[k,v] for (k,v) in query_dict.items() if v != '']
         filters_sql = ''
+        sort_by = 'DESC'
+        search = ''
+        from_date = ''
         for pair in filters:
-            if pair[0] == 'date_range':
-                from_date = pair[1].split(' ')[0]
-                to_date = datetime.strptime(pair[1].split(' ')[1], '%Y%m%d') + timedelta(days=1)
-                print(from_date, to_date) # must be one day extra so manipulate and plus one....
-                # filters_sql += f" AND dates >= '{from_date}' AND dates < '{to_date}'" # depends on front end, need to split 2 dates
+            if pair[0] == 'search':
+                search_words = pair[1].split(' ')
+                and_or_or = ''
+                for word in search_words:
+                    search += f"{and_or_or} title ILIKE '%{word}%' OR category::text ILIKE '%{word}%' OR subcategory::text ILIKE '%{word}%' OR colour::text ILIKE '%{word}%' OR description ILIKE '%{word}%'"
+                    and_or_or = 'OR'
+                search = f'AND ({search})'
+            elif pair[0] == 'sort_by':
+                sort_by = pair[1]
+            elif pair[0] == 'date_range_from':
+                from_date = pair[1]
+            elif pair[0] == 'date_range_to':
+                to_date = datetime.strptime(pair[1], '%Y-%m-%d') + timedelta(days=1)
             else:
                 filters_sql += f" AND {pair[0]} = '{pair[1]}'"
         
-        # location: 
-        cursor.execute(f"""SELECT * FROM items WHERE (title ILIKE '%{search}%' OR category::text ILIKE '%{search}%' OR subcategory::text ILIKE '%{search}%' OR colour::text ILIKE '%{search}%' OR description ILIKE '%{search}%')
-        {filters_sql} ORDER BY date_time {sort_by}""")
+        # location:
+
+        # date:
+        if from_date == '':
+            date_range_sql = f"date_time <= '{to_date}'"
+        else:
+            date_range_sql = f"(date_time BETWEEN '{from_date}' AND '{to_date}')"
+
+        cursor.execute(f"""SELECT category, subcategory, title, date_time, items.id, status, type, array_agg(photos.photo) FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE {date_range_sql} {search}
+        {filters_sql} GROUP BY items.id ORDER BY date_time {sort_by}""")
         
-        # get columns of items
+    # get columns of items
     columns = cursor.description
     result = cursor.fetchall()
 
@@ -41,3 +59,23 @@ def select_items(cursor, id='', query=''):
         return {"msg": "No items found."}
     else:
         return items
+
+
+
+
+    # cursor.execute("SELECT * FROM items ORDER BY date_time DESC")
+    #         # get columns of items
+    # columns = cursor.description
+    # result = cursor.fetchall()
+
+    # # make dict
+    # items = []
+    # for row in result:
+    #     row_dict = {}
+    #     for i, col in enumerate(columns):
+    #         row_dict[col.name] = row[i]
+    #     items.append(row_dict)
+    # if len(items) == 0:
+    #     return {"msg": "No items found."}
+    # else:
+    #     return items

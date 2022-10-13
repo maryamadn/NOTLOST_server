@@ -13,6 +13,7 @@ app.register_blueprint(items, url_prefix='/items')
 app.register_blueprint(photos, url_prefix='/photos')
 CORS(app)
 
+
 # secret = 'mary'
 # url = os.environ.get("DATABASE_URI")  # gets variables from environment
 # connection = psycopg2.connect(url)

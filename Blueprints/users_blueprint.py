@@ -8,7 +8,7 @@ import jwt
 from Functions.select_users import select_users
 
 users = Blueprint('users_blueprint', __name__)
-CORS(users)
+# cors = CORS(users, resources={r'*': {'origins': 'http://localhost:3000'}})
 
 secret = os.environ.get("SECRET")
 url = os.environ.get("DATABASE_URI")  # gets variables from environment
@@ -36,7 +36,6 @@ def get_create_users():
                         cursor.execute("""INSERT INTO users (username, password, email, full_name, phone, is_admin)
                         VALUES (%s, %s, %s, %s, %s, %s)""", values)
                     except Exception as error:
-                        print('ni', error)
                         return {"error": f'{error}'}, 400
 
     with connection:
@@ -62,6 +61,7 @@ def user(id):
 
     elif request.method == 'PUT':
         user = request.get_json()
+        user["is_admin"] = False
         if user["password"] == '':
             del user["password"]
         else:
