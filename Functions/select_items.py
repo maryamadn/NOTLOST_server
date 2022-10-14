@@ -7,7 +7,7 @@ def select_items(cursor, id='', query='', user_id=''):
     elif id != '':
         cursor.execute(f"SELECT title, category, subcategory, colour, description, items.id, last_location, status, type, date_time, found_lost_by, retrieved_by,json_agg(json_build_object('photo', photos.photo, 'photo_id', photos.id)) AS photos FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE items.id = {id} GROUP BY items.id ORDER BY date_time DESC")
     elif user_id != '':
-        cursor.execute(f"SELECT title, category, subcategory, date_time, type, items.id, type, json_agg(json_build_object('photo', photos.photo, 'photo_id', photos.id)) AS photos FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE found_lost_by = {user_id} GROUP BY items.id ORDER BY date_time DESC")
+        cursor.execute(f"SELECT title, category, subcategory, date_time, type, status, items.id, type, json_agg(json_build_object('photo', photos.photo, 'photo_id', photos.id)) AS photos FROM items LEFT JOIN photos ON photos.item_id = items.id WHERE found_lost_by = {user_id} GROUP BY items.id ORDER BY date_time DESC")
     else:
         query_dict = query.to_dict()
 
