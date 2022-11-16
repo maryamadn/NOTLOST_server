@@ -101,22 +101,19 @@ def signin():
     username = data["username"]
     with connection:
         with connection.cursor() as cursor:
-            try:
-                cursor.execute(f"SELECT * FROM users WHERE username='{username}'")
-                check_exist = cursor.fetchall()
-                print(check_exist)
-                if len(check_exist) == 0:
+            cursor.execute(f"SELECT * FROM users WHERE username='{username}'")
+            check_exist = cursor.fetchall()
+            print(check_exist)
+            if len(check_exist) == 0:
+                return {"error": "Validation failed."}, 401
+            else:
+                password = check_exist[0][2].encode('utf-8')
+                input_password = data["password"].encode('utf-8')
+                check_password = bcrypt.checkpw(input_password, password)
+                if check_password == False:
                     return {"error": "Validation failed."}, 401
                 else:
-                    password = check_exist[0][2].encode('utf-8')
-                    input_password = data["password"].encode('utf-8')
-                    check_password = bcrypt.checkpw(input_password, password)
-                    if check_password == False:
-                        return {"error": "Validation failed."}, 401
-                    else:
-                        payload = select_users(cursor, username=username)[0]
-                        del payload["password"]
-                        token = jwt.encode(payload, secret)
-                        return {"msg": "Successful sign in.", "token": token}, 200
-            except Exception:
-                return {error: Exception}
+                    payload = select_users(cursor, username=username)[0]
+                    del payload["password"]
+                    token = jwt.encode(payload, secret)
+                    return {"msg": "Successful sign in.", "token": token}, 200
