@@ -61,16 +61,19 @@ def delete_photos(id):
 @photos.route('/<int:id>', methods=['GET', 'DELETE'])
 def delete_photo(id):
     if request.method == 'DELETE':
-        with connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(f"SELECT FROM photos WHERE id={id}")
-                    check_exist = cursor.fetchall()
-                    print(check_exist)
-                    if len(check_exist) == 0:
-                        return {"error": "Photo not found."}, 404
-                    else:
-                        cursor.execute(f"DELETE FROM photos WHERE id={id}")
-                        return {"msg": "Successfully deleted photo."}, 200
+        try:
+            with connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"SELECT FROM photos WHERE id={id}")
+                        check_exist = cursor.fetchall()
+                        if len(check_exist) == 0:
+                            return {"error": "Photo not found."}, 404
+                        else:
+                            cursor.execute(f"DELETE FROM photos WHERE id={id}")
+                            return {"msg": "Successfully deleted photo."}, 200
+        except Exception as error:
+            print(error)
+            return {"error": "Unable to delete photo"}, 400
 
     # with connection:
     #     with connection.cursor() as cursor:
